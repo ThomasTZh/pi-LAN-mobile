@@ -1,0 +1,11 @@
+{"type":"future_event","payload":{"x":1}}
+{"type":"compaction_start","reason":"threshold"}
+{"type":"compaction_end","reason":"threshold","result":{"summary":"Context compacted: 42 messages","tokensBefore":150000},"aborted":false,"willRetry":false}
+{"type":"session_info_changed","name":"demo"}
+{"type":"thinking_level_changed","level":"high"}
+{"type":"auto_retry_start","attempt":1,"maxAttempts":3,"delayMs":2000,"errorMessage":"529 overloaded"}
+{"type":"child","event":"exit","code":0}
+{"type":"hello","ok":true,"pid":7}
+{"type":"meta","id":"p1","ok":true,"data":{"pong":true}}
+{"type":"response","command":"get_commands","success":true,"data":[]}
+{"type":"persona_update","name":"x"}

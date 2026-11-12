@@ -1,0 +1,23 @@
+# Build and local state
+.gradle/
+.kotlin/
+build/
+**/build/
+.local/
+local.properties
+.idea/
+*.iml
+captures/
+*.apk
+*.aab
+
+# Release signing material is never committed
+release-signing.properties
+*.keystore
+*.jks
+
+# Server runtime state and fetched third-party sources
+server/runtime/
+server/vendor/pi-rpc-web/
+
+.DS_Store

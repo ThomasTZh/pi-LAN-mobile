@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Pi Mobile</string>
+
+    <string name="channel_attention">Approvals and questions</string>
+    <string name="channel_attention_description">Approvals and questions that block a Pi run</string>
+    <string name="channel_updates">Session updates</string>
+    <string name="channel_updates_description">Finished runs and errors from Pi sessions</string>
+    <string name="channel_service">Pi connected</string>
+    <string name="channel_service_description">Keeps the Pi connection alive while the app is in the background</string>
+
+    <string name="notif_ongoing_title">Pi connected</string>
+    <string name="notif_ongoing_connecting">Connecting to Pi…</string>
+    <string name="notif_stop">Stop</string>
+    <string name="notif_approval_title">Pi needs approval</string>
+    <string name="notif_question_title">Pi has a question</string>
+    <string name="notif_finished_title">Pi finished</string>
+    <string name="notif_error_title">Pi error</string>
+    <string name="notif_open">Open Pi Mobile to review.</string>
+    <string name="notif_private_title">Pi Mobile</string>
+    <string name="notif_private_body">Open the app to see the update.</string>
+
+    <string name="chat_output">Output</string>
+    <string name="chat_output_truncated">Output · truncated</string>
+
+    <!-- Connect -->
+    <string name="connect_title">Pi Mobile</string>
+    <string name="connect_server">Server</string>
+    <string name="connect_pin">PIN</string>
+    <string name="connect_pin_show">Show PIN</string>
+    <string name="connect_pin_hide">Hide PIN</string>
+    <string name="connect_remember">Remember</string>
+    <string name="connect_action">Connect</string>
+    <string name="connect_connecting">Connecting</string>
+    <string name="connect_hint">Start the Pi host on your computer, then enter the address and PIN it prints.</string>
+
+    <!-- Chat -->
+    <string name="chat_sessions">Sessions</string>
+    <string name="chat_more">More</string>
+    <string name="chat_message_hint">Message Pi</string>
+    <string name="chat_send">Send</string>
+    <string name="chat_queue">Queue</string>
+    <string name="chat_stop">Stop</string>
+    <string name="chat_jump_latest">Jump to latest</string>
+    <string name="chat_hero_title">Ask Pi anything</string>
+    <string name="chat_hero_body">Tool calls, thinking and approvals appear here as they happen.</string>
+    <string name="chat_connecting">Connecting…</string>
+    <string name="chat_loading_session">Loading session…</string>
+    <string name="chat_reconnecting">Reconnecting…</string>
+    <string name="chat_disconnected">Disconnected</string>
+    <string name="chat_retry">Retry</string>
+    <string name="chat_disconnect">Disconnect</string>
+    <string name="chat_forget">Forget</string>
+    <string name="chat_model">Model</string>
+    <string name="chat_thinking">Thinking</string>
+    <string name="chat_stats">Stats</string>
+    <string name="chat_settings">Settings</string>
+    <string name="chat_forget_title">Forget this server?</string>
+    <string name="chat_forget_body">Removes the saved address and the sealed PIN from this phone.</string>
+    <string name="chat_cancel">Cancel</string>
+    <string name="chat_copied">Copied</string>
+    <string name="chat_show_thinking">Show thinking</string>
+    <string name="chat_hide_thinking">Hide thinking</string>
+    <string name="chat_show_output">Show output</string>
+    <string name="chat_hide_output">Hide output</string>
+    <string name="chat_status_queued">Queued</string>
+    <string name="chat_status_running">Running</string>
+    <string name="chat_status_done">Done</string>
+    <string name="chat_status_failed">Failed</string>
+    <string name="chat_streaming">Streaming</string>
+    <string name="chat_slow_model">The desktop may be loading the model…</string>
+
+    <!-- Sheets -->
+    <string name="sheet_sessions">Sessions</string>
+    <string name="sheet_new_chat">New chat</string>
+    <string name="sheet_refresh">Refresh</string>
+    <string name="sheet_close">Close</string>
+    <string name="sheet_model">Model</string>
+    <string name="sheet_thinking">Thinking</string>
+    <string name="sheet_stats">Stats</string>
+    <string name="sheet_settings">Settings</string>
+    <string name="sheet_rename">Rename session</string>
+    <string name="sheet_rename_action">Rename</string>
+    <string name="sheet_delete">Delete session?</string>
+    <string name="sheet_open">Open</string>
+    <string name="sheet_delete_action">Delete</string>
+    <string name="sheet_switch">Switch session?</string>
+    <string name="sheet_switch_confirm">Switch</string>
+    <string name="sheet_stay">Stay</string>
+    <string name="sheet_name">Name</string>
+    <string name="sheet_allow">Allow</string>
+    <string name="sheet_deny">Deny</string>
+    <string name="sheet_submit">Submit</string>
+    <string name="sheet_dismiss">Dismiss</string>
+    <string name="sheet_approval_waiting">Approval waiting</string>
+    <string name="sheet_review">Review</string>
+    <string name="approval_title_confirm">Approve this action?</string>
+    <string name="approval_title_select">Choose an option</string>
+    <string name="approval_title_input">Pi needs input</string>
+    <string name="approval_title_editor">Pi needs an edit</string>
+    <string name="approval_title_unknown">Pi has a request</string>
+    <string name="approval_more_waiting">more waiting</string>
+    <string name="approval_timed_out">Timed out</string>
+    <string name="sheet_auto_dismiss">Auto-dismiss in %1$ds</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_alerts">Alerts</string>
+    <string name="settings_notifications_allowed">Notifications allowed</string>
+    <string name="settings_notifications_denied">Notifications not allowed</string>
+    <string name="settings_permission">Notification permission</string>
+    <string name="settings_permission_body">Android needs permission to alert you about approvals.</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_text_size">Text size</string>
+    <string name="settings_device">Device</string>
+    <string name="settings_keep_awake">Keep screen awake</string>
+    <string name="settings_haptics">Haptics</string>
+    <string name="settings_hide_details">Hide notification details</string>
+    <string name="settings_hide_details_body">Shows a generic title and body on the lock screen and in the shade, even when the screen is unlocked.</string>
+    <string name="settings_battery">Battery optimisation</string>
+    <string name="settings_battery_optimised">Exempt Pi from battery restrictions so the connection survives long runs</string>
+    <string name="settings_battery_ignored">Pi is exempt from battery restrictions</string>
+    <string name="settings_forget">Forget server</string>
+    <string name="settings_forget_body">Deletes the saved address and the sealed PIN.</string>
+    <string name="settings_about">About</string>
+    <string name="settings_about_version">Pi Mobile 1.0.0</string>
+    <string name="settings_about_license">Pi Mobile is MIT licensed. Bundled libraries use Apache 2.0; see THIRD_PARTY.md in the project.</string>
+    <string name="settings_about_private">Private LAN only. No cloud, no account.</string>
+    <string name="settings_allow">Allow</string>
+    <string name="theme_system">System</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_light">Light</string>
+</resources>

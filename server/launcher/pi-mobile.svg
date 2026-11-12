@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Pi Mobile">
+  <rect x="24" y="24" width="464" height="464" rx="112" fill="#7C86F5"/>
+  <g fill="none" stroke="#101014" stroke-width="36" stroke-linecap="round">
+    <path d="M138 176 H374"/>
+    <path d="M204 176 L188 352"/>
+    <path d="M334 176 V352"/>
+  </g>
+</svg>

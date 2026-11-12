@@ -1,0 +1,6 @@
+{"type":"extension_ui_request","id":"ui1","method":"confirm","title":"Allow command?","message":"rm -rf build","timeout":30000}
+{"type":"extension_ui_request","id":"ui2","method":"select","title":"Pick one","options":["A","B"],"timeout":10000}
+{"type":"extension_ui_request","id":"ui3","method":"input","title":"Name","placeholder":"session name"}
+{"type":"extension_ui_request","id":"ui4","method":"notify","message":"Heads up","notifyType":"warning"}
+{"type":"extension_ui_request","id":"ui5","method":"setStatus","statusKey":"ext","statusText":"working"}
+{"type":"extension_ui_request","id":"ui1","method":"confirm","title":"Duplicate"}
