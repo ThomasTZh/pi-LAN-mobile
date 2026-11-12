@@ -156,6 +156,10 @@ fun ChatScreen(
             }
         }
 
+        WorkingIndicator(
+            visible = state.streaming || state.thinking,
+            queueCount = state.queue.size,
+        )
         ExtensionWidgetPanel(state.widgets)
         ComposerDivider()
         Composer(

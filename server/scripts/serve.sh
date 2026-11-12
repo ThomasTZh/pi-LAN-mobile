@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Pi LAN host launcher.
 #
-# Starts the vendored pi-rpc-web extension inside `pi --mode rpc` with
-# --rpc-web --rpc-web-lan, keeps stdin open (the host exits immediately on
+# Starts the Pi LAN host inside `pi --mode rpc --lan-host` (scripts/pi-web-lan.ts
+# wraps the vendored pi-rpc-web server), keeps stdin open (the host exits on
 # stdin EOF), detaches into its own session so it survives the launching
 # shell, waits for the printed URL and Login PIN, and writes
 # runtime/connection.json (mode 0600).
@@ -19,7 +19,8 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 SERVER_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 REPO_ROOT="$(cd -- "$SERVER_DIR/.." && pwd)"
 SELF="$SCRIPT_DIR/$(basename -- "${BASH_SOURCE[0]}")"
-VENDOR_EXTENSION="$SERVER_DIR/vendor/pi-rpc-web/src/extension.ts"
+VENDOR_SERVER="$SERVER_DIR/vendor/pi-rpc-web/src/server.ts"
+PI_WEB_LAN_EXTENSION="$SERVER_DIR/scripts/pi-web-lan.ts"
 
 RUNTIME_DIR="${PI_LAN_HOST_RUNTIME:-$SERVER_DIR/runtime}"
 case "$RUNTIME_DIR" in
@@ -37,6 +38,8 @@ usage() {
 Start the Pi LAN host (pi-rpc-web in LAN mode).
 
 Options:
+  --new-pin     Generate a new LAN PIN (the PIN is otherwise kept across
+                restarts in runtime/pin, so the phone can stay paired)
   --test        Test mode: PI_WEB_PORT=7692, sandboxed PI_HOME under
                 runtime/pi-home, child session store
                 $PI_HOME/agent/sessions/<--encoded-project--> (pi's own layout,
@@ -72,17 +75,19 @@ if [ "${PI_LAN_HOST_LAUNCH:-0}" = "1" ]; then
 	# `pi --mode rpc` exits on stdin EOF, so keep an endless pipe on fd 0.
 	# `tail` stays in this session/process group and dies with stop.sh.
 	exec 0< <(exec tail -f /dev/null)
-	exec "$PI_BIN" --mode rpc --no-session --no-mcp --rpc-web --rpc-web-lan \
-		-e "$VENDOR_EXTENSION"
+	exec "$PI_BIN" --mode rpc --no-session --no-mcp --lan-host \
+		-e "$PI_WEB_LAN_EXTENSION"
 fi
 
 # ---------------------------------------------------------------------------
 # Foreground setup / supervisor
 # ---------------------------------------------------------------------------
 TEST_MODE=0
+NEW_PIN=0
 for arg in "$@"; do
 	case "$arg" in
 		--test) TEST_MODE=1 ;;
+		--new-pin) NEW_PIN=1 ;;
 		-h | --help)
 			usage
 			exit 0
@@ -101,6 +106,27 @@ if [ ! -d "$PI_PROJECT_DIR" ]; then
 	exit 1
 fi
 PI_PROJECT_DIR="$(cd -- "$PI_PROJECT_DIR" && pwd)"
+
+# --------------------------------------------------------------- LAN PIN
+# The PIN is the phone's only credential and Pi Mobile stores it, so keep one
+# PIN across host restarts instead of generating a new one per process.
+# `--new-pin` rotates it; the file is 0600 inside the 0700 runtime directory.
+PIN_FILE="$RUNTIME_DIR/pin"
+if [ "$NEW_PIN" = "1" ]; then
+	rm -f -- "$PIN_FILE"
+fi
+if [ ! -s "$PIN_FILE" ]; then
+	mkdir -p -- "$RUNTIME_DIR"
+	chmod 700 -- "$RUNTIME_DIR" 2>/dev/null || true
+	python3 -c 'import secrets; print(f"{secrets.randbelow(1000000):06d}")' >"$PIN_FILE"
+	chmod 600 -- "$PIN_FILE"
+fi
+PI_WEB_PIN="$(tr -dc '0-9' <"$PIN_FILE")"
+if [ "${#PI_WEB_PIN}" -ne 6 ]; then
+	printf 'serve.sh: invalid PIN file (expected six digits): %s\n' "$PIN_FILE" >&2
+	exit 1
+fi
+export PI_WEB_PIN
 
 if [ "$TEST_MODE" = "1" ]; then
 	PI_WEB_PORT="${PI_WEB_PORT:-7692}"
@@ -187,9 +213,13 @@ if ! command -v setsid >/dev/null 2>&1; then
 	printf 'serve.sh: setsid is required (util-linux)\n' >&2
 	exit 1
 fi
-if [ ! -f "$VENDOR_EXTENSION" ]; then
-	printf 'serve.sh: pi-rpc-web is not fetched yet: %s\n' "$VENDOR_EXTENSION" >&2
+if [ ! -f "$VENDOR_SERVER" ]; then
+	printf 'serve.sh: pi-rpc-web is not fetched yet: %s\n' "$VENDOR_SERVER" >&2
 	printf 'Run server/scripts/fetch-vendor.sh once to download the pinned extension.\n' >&2
+	exit 1
+fi
+if [ ! -f "$PI_WEB_LAN_EXTENSION" ]; then
+	printf 'serve.sh: LAN host extension missing: %s\n' "$PI_WEB_LAN_EXTENSION" >&2
 	exit 1
 fi
 if [ -z "${PI_BIN:-}" ]; then
@@ -374,6 +404,6 @@ printf '  Log:        %s\n' "$STDERR_LOG"
 printf '  Stdout log: %s\n' "$STDOUT_LOG"
 printf '  Connection: %s\n' "$CONNECTION_FILE"
 printf '  Started:    %s\n' "$STARTED_AT"
-printf 'Launch: %s --mode rpc --no-session --no-mcp --rpc-web --rpc-web-lan -e %s\n' \
-	"$PI_BIN" "$VENDOR_EXTENSION"
+printf 'Launch: %s --mode rpc --no-session --no-mcp --lan-host -e %s\n' \
+	"$PI_BIN" "$PI_WEB_LAN_EXTENSION"
 exit 0

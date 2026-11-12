@@ -1,5 +1,7 @@
 package dev.pi.mobile.session
 
+import dev.pi.mobile.core.stripAnsi
+
 import dev.pi.mobile.proto.AssistantStreamEvent
 import dev.pi.mobile.proto.ContentBlock
 import dev.pi.mobile.proto.Messages
@@ -519,8 +521,9 @@ object ChatReducer {
 
     private fun capOutput(text: String?, wasTruncated: Boolean): Pair<String?, Boolean> {
         if (text == null) return null to wasTruncated
-        if (text.length <= MAX_TOOL_OUTPUT) return text to wasTruncated
-        return text.take(MAX_TOOL_OUTPUT) to true
+        val clean = text.stripAnsi()
+        if (clean.length <= MAX_TOOL_OUTPUT) return clean to wasTruncated
+        return clean.take(MAX_TOOL_OUTPUT) to true
     }
 
     // ---------------------------------------------------------------- dialogs
@@ -726,7 +729,7 @@ object ChatReducer {
                 }
 
                 dev.pi.mobile.proto.MessageRole.ToolResult -> {
-                    val text = message.content.plainText()
+                    val text = message.content.plainText().stripAnsi()
                     val index = message.toolCallId?.let { cardIndex[it] }
                     if (index != null && index in out.indices) {
                         val card = out[index] as ChatItem.ToolCard

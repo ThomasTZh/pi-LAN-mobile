@@ -9,10 +9,12 @@ JSONL RPC records.
 
 ## What it does
 
-- `scripts/serve.sh` starts `pi --mode rpc --no-session --no-mcp --rpc-web
-  --rpc-web-lan -e vendor/pi-rpc-web/src/extension.ts`, holds stdin open (the
-  host exits on stdin EOF), detaches with `setsid`, waits for the printed URL and
-  `Login PIN`, and writes `runtime/connection.json` (mode 0600).
+- `scripts/serve.sh` starts `pi --mode rpc --no-session --no-mcp --lan-host
+  -e scripts/pi-web-lan.ts`, holds stdin open (the host exits on stdin EOF),
+  detaches with `setsid`, waits for the printed URL and `Login PIN`, and writes
+  `runtime/connection.json` (mode 0600). `scripts/pi-web-lan.ts` is a small
+  launcher-owned extension that starts the unmodified vendored server with the
+  PIN from `runtime/pin`, so the PIN survives restarts.
 - `scripts/status.sh` shows the PID, URL, PIN, a `/login` health probe and the
   log tail; `scripts/stop.sh` stops the process group and waits for the port.
 - `scripts/fetch-vendor.sh` downloads the pinned pi-rpc-web commit, verifies the
@@ -46,7 +48,9 @@ server/scripts/stop.sh
 ```
 
 The banner prints the URL (`http://<lan-ip>:7690`) and the PIN
-(`Login PIN: 123 456`). The PIN changes on every start.
+(`Login PIN: 123 456`). The PIN is generated once and kept in `runtime/pin`
+(mode 0600) across restarts, so a phone pairs once; `serve.sh --new-pin`
+rotates it.
 
 Desktop shortcut:
 
@@ -86,7 +90,8 @@ WantedBy=default.target
 
 ## Security
 
-- Plain HTTP on the private network, one shared PIN per host process. Five
+- Plain HTTP on the private network, one shared PIN kept across restarts (a
+  long-lived credential; rotate it with `serve.sh --new-pin` when needed). Five
   failed logins from one peer within 30 seconds lock that peer out for 30
   seconds. The browser cookie is memory-only.
 - Anyone who can reach the port and read the PIN controls the agent, including

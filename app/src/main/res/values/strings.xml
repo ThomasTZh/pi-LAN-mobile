@@ -69,6 +69,12 @@
     <string name="chat_status_done">Done</string>
     <string name="chat_status_failed">Failed</string>
     <string name="chat_streaming">Streaming</string>
+    <string name="chat_working">Pi is working…</string>
+    <string name="chat_working_hint">You can queue a message</string>
+    <plurals name="chat_queued_count">
+        <item quantity="one">%1$d queued</item>
+        <item quantity="other">%1$d queued</item>
+    </plurals>
     <string name="chat_slow_model">The desktop may be loading the model…</string>
 
     <string name="newchat_title">New chat</string>
@@ -129,7 +135,7 @@
     <string name="settings_forget">Forget server</string>
     <string name="settings_forget_body">Deletes the saved address and the sealed PIN.</string>
     <string name="settings_about">About</string>
-    <string name="settings_about_version">Pi Mobile 1.2.0</string>
+    <string name="settings_about_version">Pi Mobile 1.3.0</string>
     <string name="settings_about_license">Pi Mobile is MIT licensed. Bundled libraries use Apache 2.0; see THIRD_PARTY.md in the project.</string>
     <string name="settings_about_private">Private LAN only. No cloud, no account.</string>
     <string name="settings_allow">Allow</string>

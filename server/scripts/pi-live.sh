@@ -27,12 +27,14 @@ RUNTIME=${PI_LAN_HOST_RUNTIME:-$SERVER_DIR/runtime}
 CONN=$RUNTIME/connection.json
 
 TEST_MODE=0
+NEW_PIN=0
 PAUSE=1
 NO_CLI=0
 
 usage() {
 	cat <<'USAGE'
 Usage: pi-live.sh [--test] [--no-pause] [--no-cli] [--project DIR]
+  --new-pin    generate a new LAN PIN (the PIN is kept across restarts by default)
   --test       start the host in sandboxed test mode (port 7692, seeded config)
   --no-pause   skip the "Press Enter" prompt before the CLI
   --no-cli     start the host only (no Pi CLI), for diagnostics
@@ -44,6 +46,7 @@ USAGE
 while [ $# -gt 0 ]; do
 	case "$1" in
 		--test) TEST_MODE=1 ;;
+		--new-pin) NEW_PIN=1 ;;
 		--no-pause) PAUSE=0 ;;
 		--no-cli) NO_CLI=1 ;;
 		--project)
@@ -118,11 +121,9 @@ format_pin() {
 }
 
 echo "Pi Mobile: starting the Pi LAN host"
-if [ "$TEST_MODE" = 1 ]; then
-	serve_args=(--test)
-else
-	serve_args=()
-fi
+serve_args=()
+[ "$TEST_MODE" = 1 ] && serve_args+=(--test)
+[ "$NEW_PIN" = 1 ] && serve_args+=(--new-pin)
 
 if ! bash "$SCRIPT_DIR/serve.sh" "${serve_args[@]}"; then
 	echo

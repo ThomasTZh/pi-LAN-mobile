@@ -8,9 +8,11 @@ compileSdk 37.
 
 - Connect with the desktop address and the six-digit PIN; the PIN is masked by
   default, sealed with an Android Keystore key, and only private network
-  addresses are accepted.
+  addresses are accepted. The host reuses the same PIN across restarts, so the
+  saved profile reconnects without pairing again.
 - Chat with the agent: streaming text, a markdown subset, collapsible thinking,
-  tool cards with streamed output, queue/steer while a run is active, and Stop.
+  tool cards with streamed output, a "Pi is working…" line with the queued
+  count, queue/steer while a run is active, and Stop.
 - Answer blocking requests (`confirm`, `select`, `input`, `editor`) in bottom
   sheets, with a persistent "Approval waiting" banner after a dismiss.
 - Sessions: list the host's session store grouped by project, cold-resume one,

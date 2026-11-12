@@ -1,5 +1,7 @@
 package dev.pi.mobile.proto
 
+import dev.pi.mobile.core.stripAnsi
+
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -216,18 +218,18 @@ object Records {
         return PiRecord.ExtensionUiRequest(
             id = obj.firstString("id") ?: "",
             method = obj.firstString("method", "dialogType", "kind") ?: "unknown",
-            title = obj.firstString("title", "header"),
-            message = obj.firstString("message", "question", "body", "prompt"),
-            options = options,
-            placeholder = obj.firstString("placeholder"),
-            prefill = obj.firstString("prefill", "value"),
+            title = obj.firstString("title", "header")?.stripAnsi(),
+            message = obj.firstString("message", "question", "body", "prompt")?.stripAnsi(),
+            options = options.map { it.stripAnsi() },
+            placeholder = obj.firstString("placeholder")?.stripAnsi(),
+            prefill = obj.firstString("prefill", "value")?.stripAnsi(),
             timeoutMs = obj.longOr("timeoutMs") ?: obj.longOr("timeout"),
             notifyType = obj.firstString("notifyType"),
             statusKey = obj.firstString("statusKey"),
-            statusText = obj.firstString("statusText"),
+            statusText = obj.firstString("statusText")?.stripAnsi(),
             widgetKey = obj.firstString("widgetKey"),
-            widgetLines = stringList(obj.arr("widgetLines")),
-            editorText = obj.firstString("text"),
+            widgetLines = stringList(obj.arr("widgetLines")).map { it.stripAnsi() },
+            editorText = obj.firstString("text")?.stripAnsi(),
         )
     }
 
