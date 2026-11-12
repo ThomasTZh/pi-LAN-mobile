@@ -58,26 +58,36 @@ object ChatReducer {
         reduce(state, Records.parse(record), nowMs)
 
     fun reduce(state: ChatState, record: PiRecord, nowMs: Long = 0L): ChatState = when (record) {
-        // The run records below are the evidence that the host started working
-        // on the newest accepted prompt, so each one also moves its tick.
-        is PiRecord.AgentStart -> markProcessing(
-            state.copy(streaming = true, thinking = false, banner = null, lastError = null),
-        )
+        // A run or a turn starting only proves Pi is trying. With an unreachable
+        // model it emits agent_start/turn_start/assistant message_start and then
+        // errors out with no content, so the tick stays single until real model
+        // output arrives (T5 device finding: llama.cpp stopped, still two ticks).
+        is PiRecord.AgentStart -> state.copy(streaming = true, thinking = false, banner = null, lastError = null)
 
-        is PiRecord.TurnStart -> markProcessing(state.copy(streaming = true))
+        is PiRecord.TurnStart -> state.copy(streaming = true)
 
         is PiRecord.MessageStart -> when (record.role) {
-            dev.pi.mobile.proto.MessageRole.Assistant -> markProcessing(startAssistant(state, record.message))
+            dev.pi.mobile.proto.MessageRole.Assistant -> startAssistant(state, record.message)
             dev.pi.mobile.proto.MessageRole.User -> startUser(state, record.message)
             else -> state
         }
 
+        // Streaming deltas are model output: this is the first record that proves
+        // the provider answered.
         is PiRecord.MessageUpdate -> markProcessing(applyStreamEvent(state, record.contentIndex, record.event))
 
-        is PiRecord.MessageEnd -> finishMessage(state, record.message)
+        // Providers that do not stream deltas still deliver the answer here, so a
+        // message_end that carries content is output too; an error ends with an
+        // empty content list and leaves the tick single.
+        is PiRecord.MessageEnd -> {
+            val next = finishMessage(state, record.message)
+            if (record.message.producedOutput()) markProcessing(next) else next
+        }
 
         is PiRecord.TurnEnd -> state
 
+        // A tool call is something the model produced, so running it means the
+        // run is past the provider.
         is PiRecord.ToolExecutionStart -> markProcessing(upsertToolCard(state, record))
 
         is PiRecord.ToolExecutionUpdate -> updateToolOutput(state, record)
@@ -166,9 +176,10 @@ object ChatReducer {
     }
 
     /**
-     * Processing evidence arrived (agent/turn start, assistant message start or
-     * update, tool execution start). Only the newest prompt row is upgraded, so
-     * a queued follow-up that has no row of its own cannot promote a stale
+     * Processing evidence arrived: streamed model output ([PiRecord.MessageUpdate]),
+     * a tool call the model produced ([PiRecord.ToolExecutionStart]) or a finished
+     * assistant message carrying content. Only the newest prompt row is upgraded,
+     * so a queued follow-up that has no row of its own cannot promote a stale
      * message, and a row that already shows two checks is left alone.
      *
      * A prompt whose acceptance reply is still in flight is upgraded too: the
@@ -185,6 +196,22 @@ object ChatReducer {
             items = state.items.toMutableList().also { it[index] = item.copy(delivery = DeliveryState.Processing) },
         )
     }
+
+    /**
+     * True when a finished assistant message carries something the model
+     * produced. Pi ends a failed provider call (for example llama.cpp not
+     * running) with `stopReason: "error"` and an empty content list, and that
+     * must not be counted as the model having started.
+     */
+    private fun PiMessage.producedOutput(): Boolean =
+        role == dev.pi.mobile.proto.MessageRole.Assistant &&
+            content.any { block ->
+                when (block) {
+                    is ContentBlock.Text -> block.text.isNotBlank()
+                    is ContentBlock.Thinking -> block.text.isNotBlank()
+                    is ContentBlock.ToolCall, is ContentBlock.Image -> true
+                }
+            }
 
     /**
      * The `prompt` command succeeded. Pi reports in `data.disposition` what it

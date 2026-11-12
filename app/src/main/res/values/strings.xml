@@ -137,7 +137,7 @@
     <string name="settings_forget">Forget server</string>
     <string name="settings_forget_body">Deletes the saved address and the sealed PIN.</string>
     <string name="settings_about">About</string>
-    <string name="settings_about_version">Pi Mobile 1.4.0</string>
+    <string name="settings_about_version">Pi Mobile 1.4.1</string>
     <string name="settings_about_license">Pi Mobile is MIT licensed. Bundled libraries use Apache 2.0; see THIRD_PARTY.md in the project.</string>
     <string name="settings_about_private">Private LAN only. No cloud, no account.</string>
     <string name="settings_allow">Allow</string>

@@ -26,7 +26,8 @@ small host launcher around the existing extension.
 - Watch a run live: streaming text, collapsible thinking, tool cards whose
   output expands in place, and a "Pi is working…" line with the queued count.
 - Delivery ticks on your messages: one check once Pi accepts the prompt, two
-  when the run actually starts on it (thinking, a tool call or streaming).
+  once the model actually starts producing output (first streamed text,
+  thinking or tool call).
 - Markdown rendering: headings, nested and task lists, tables with alignment,
   quotes, fenced code with copy, strikethrough, rules and links; images are
   shown by their alt text and never fetched.
@@ -63,6 +64,9 @@ small host launcher around the existing extension.
   manufacturers are untested.
 - Delivery ticks are live-only. A transcript restored from the host shows no
   ticks because the host history carries no delivery information.
+- The double check appears at the first model output, so a long prompt prefill
+  can keep it single for tens of seconds while the reply is still being
+  prepared.
 - The command palette lists what the host reports (extension commands, prompt
   templates, skills). Commands that only exist in the terminal interface are
   not available.
@@ -116,7 +120,7 @@ instrumented UI test with a synthetic command.
    reused on later starts, so the phone only needs pairing once.
    `serve.sh --new-pin` rotates it.
 
-3. Install `Pi-Mobile-1.4.0.apk` from the repository's releases on the phone,
+3. Install `Pi-Mobile-1.4.1.apk` from the repository's releases on the phone,
    open the app, enter the address and PIN, and tap Connect.
 
 4. Optional: install the desktop entry that starts the host and the terminal
@@ -173,7 +177,7 @@ directory are left in place; delete them yourself if they are no longer wanted.
 
 | Check | Result |
 | --- | --- |
-| JVM unit tests | 135 tests, 0 failures (`:app:testDebugUnitTest`) |
+| JVM unit tests | 137 tests, 0 failures (`:app:testDebugUnitTest`) |
 | Instrumented UI and screenshot tests | 124 tests, 0 failures on the ASUS phone (API 35) |
 | Android lint | 0 errors, 25 warnings (dependency and target-version notices) |
 | Host contract smoke test | 11 of 11 checks pass without a model call (`node server/tests/smoke.mjs`) |
