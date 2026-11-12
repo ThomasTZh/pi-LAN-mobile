@@ -38,7 +38,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -49,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import dev.pi.mobile.R
 import dev.pi.mobile.core.TimeFormat
 import dev.pi.mobile.session.ChatItem
+import dev.pi.mobile.session.DeliveryState
 import dev.pi.mobile.session.NoticeKind
 import dev.pi.mobile.session.ToolStatus
 import dev.pi.mobile.proto.ContentBlock
@@ -60,7 +68,11 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 
-/** A user prompt: right-aligned bubble, 88% max width, long-press to copy. */
+/**
+ * A user prompt: right-aligned bubble, 88% max width, long-press to copy. The
+ * delivery tick sits at the bottom-right inside the bubble: one check once Pi
+ * accepted the prompt, two once the run started on it, nothing while sending.
+ */
 @Composable
 fun UserMessageRow(item: ChatItem.UserMessage, onCopy: (String) -> Unit) {
     Row(
@@ -77,13 +89,105 @@ fun UserMessageRow(item: ChatItem.UserMessage, onCopy: (String) -> Unit) {
             color = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
         ) {
-            Text(
-                text = item.text,
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                style = MaterialTheme.typography.bodyLarge,
+            Row(
+                modifier = Modifier.padding(start = 14.dp, end = 10.dp, top = 10.dp, bottom = 10.dp),
+                verticalAlignment = Alignment.Bottom,
+            ) {
+                Text(
+                    text = item.text,
+                    modifier = Modifier.weight(1f, fill = false),
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+                if (item.delivery != DeliveryState.Sending) {
+                    DeliveryTick(
+                        delivery = item.delivery,
+                        modifier = Modifier.padding(start = 6.dp, bottom = 2.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Test tags for the two tick glyphs (one check for Sent, two for Processing). */
+const val TAG_TICK_SENT = "tick_sent"
+const val TAG_TICK_PROCESSING = "tick_processing"
+
+/**
+ * WhatsApp-style ticks drawn with two strokes per check: one check for
+ * [DeliveryState.Sent], two overlapping checks for [DeliveryState.Processing].
+ * The glyph is drawn rather than set as text, so it keeps a fixed 11dp height,
+ * sits at the bottom-right of the bubble and never competes with the prompt for
+ * a line of its own.
+ */
+@Composable
+private fun DeliveryTick(delivery: DeliveryState, modifier: Modifier = Modifier) {
+    val processing = delivery == DeliveryState.Processing
+    val description = stringResource(
+        if (processing) R.string.chat_tick_processing else R.string.chat_tick_sent,
+    )
+    val color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.72f)
+    Canvas(
+        modifier = modifier
+            .size(width = if (processing) 18.dp else 12.dp, height = 11.dp)
+            .semantics { contentDescription = description }
+            .testTag(if (processing) TAG_TICK_PROCESSING else TAG_TICK_SENT),
+    ) {
+        // Round caps reach half a stroke past the path, so the checks are drawn
+        // inside an inset box to keep both tips whole.
+        val stroke = size.height * 0.17f
+        val inset = stroke * 0.5f
+        val width = size.width - stroke
+        val height = size.height - stroke
+        if (processing) {
+            drawTickCheck(
+                color = color,
+                stroke = stroke,
+                left = inset,
+                top = inset + height * 0.12f,
+                width = width * 0.58f,
+                height = height * 0.88f,
+            )
+            drawTickCheck(
+                color = color,
+                stroke = stroke,
+                left = inset + width * 0.40f,
+                top = inset,
+                width = width * 0.60f,
+                height = height * 0.88f,
+            )
+        } else {
+            drawTickCheck(
+                color = color,
+                stroke = stroke,
+                left = inset,
+                top = inset,
+                width = width,
+                height = height,
             )
         }
     }
+}
+
+/** One check mark inside the tick box. */
+private fun DrawScope.drawTickCheck(
+    color: Color,
+    stroke: Float,
+    left: Float,
+    top: Float,
+    width: Float,
+    height: Float,
+) {
+    val path = Path().apply {
+        moveTo(left, top + height * 0.58f)
+        lineTo(left + width * 0.34f, top + height * 0.94f)
+        lineTo(left + width, top + height * 0.06f)
+    }
+    drawPath(
+        path = path,
+        color = color,
+        style = Stroke(width = stroke, cap = StrokeCap.Round, join = StrokeJoin.Round),
+    )
 }
 
 /**

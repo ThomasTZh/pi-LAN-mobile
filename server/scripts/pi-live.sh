@@ -129,6 +129,11 @@ if ! bash "$SCRIPT_DIR/serve.sh" "${serve_args[@]}"; then
 	echo
 	echo "The Pi LAN host did not start, so the Pi CLI was not opened."
 	echo "If another instance is already running: $SCRIPT_DIR/stop.sh"
+	# The window closes when this script exits; keep startup errors readable.
+	if [ -t 0 ]; then
+		printf '\nPress Enter to close this window. '
+		read -r _ || true
+	fi
 	exit 3
 fi
 HOST_STARTED=1

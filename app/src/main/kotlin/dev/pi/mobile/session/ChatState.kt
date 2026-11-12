@@ -10,6 +10,13 @@ enum class ConnectionPhase { Idle, Connecting, Connected, Reconnecting, Disconne
 
 enum class ToolStatus { Pending, Running, Success, Error }
 
+/**
+ * WhatsApp-style delivery state of a user prompt. It only ever moves forward:
+ * [Sending] (the app queued the prompt, no tick) -> [Sent] (Pi accepted it, one
+ * check) -> [Processing] (the run actually started on it, two checks).
+ */
+enum class DeliveryState { Sending, Sent, Processing }
+
 enum class NoticeKind { Info, Success, Warning, Error }
 
 enum class DialogKind { Confirm, Select, Input, Editor, Unknown }
@@ -40,6 +47,8 @@ sealed interface ChatItem {
         override val id: String,
         val text: String,
         val blocks: List<ContentBlock> = emptyList(),
+        /** Tick state; [ChatReducer] only ever moves it forward. */
+        val delivery: DeliveryState = DeliveryState.Sending,
     ) : ChatItem
 
     data class AssistantMessage(

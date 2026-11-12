@@ -58,23 +58,27 @@ object ChatReducer {
         reduce(state, Records.parse(record), nowMs)
 
     fun reduce(state: ChatState, record: PiRecord, nowMs: Long = 0L): ChatState = when (record) {
-        is PiRecord.AgentStart -> state.copy(streaming = true, thinking = false, banner = null, lastError = null)
+        // The run records below are the evidence that the host started working
+        // on the newest accepted prompt, so each one also moves its tick.
+        is PiRecord.AgentStart -> markProcessing(
+            state.copy(streaming = true, thinking = false, banner = null, lastError = null),
+        )
 
-        is PiRecord.TurnStart -> state.copy(streaming = true)
+        is PiRecord.TurnStart -> markProcessing(state.copy(streaming = true))
 
         is PiRecord.MessageStart -> when (record.role) {
-            dev.pi.mobile.proto.MessageRole.Assistant -> startAssistant(state, record.message)
+            dev.pi.mobile.proto.MessageRole.Assistant -> markProcessing(startAssistant(state, record.message))
             dev.pi.mobile.proto.MessageRole.User -> startUser(state, record.message)
             else -> state
         }
 
-        is PiRecord.MessageUpdate -> applyStreamEvent(state, record.contentIndex, record.event)
+        is PiRecord.MessageUpdate -> markProcessing(applyStreamEvent(state, record.contentIndex, record.event))
 
         is PiRecord.MessageEnd -> finishMessage(state, record.message)
 
         is PiRecord.TurnEnd -> state
 
-        is PiRecord.ToolExecutionStart -> upsertToolCard(state, record)
+        is PiRecord.ToolExecutionStart -> markProcessing(upsertToolCard(state, record))
 
         is PiRecord.ToolExecutionUpdate -> updateToolOutput(state, record)
 
@@ -124,10 +128,15 @@ object ChatReducer {
     // ---------------------------------------------------------------- prompts
 
     /** Optimistic user row plus the run flag, before the prompt is accepted. */
-    fun userPrompt(state: ChatState, text: String): ChatState {
+    fun userPrompt(
+        state: ChatState,
+        text: String,
+        delivery: DeliveryState = DeliveryState.Sending,
+    ): ChatState {
         val next = state.sequence + 1
         return state.copy(
-            items = (state.items + ChatItem.UserMessage("i$next", text)).takeLast(MAX_ITEMS),
+            items = (state.items + ChatItem.UserMessage(id = "i$next", text = text, delivery = delivery))
+                .takeLast(MAX_ITEMS),
             sequence = next,
             streaming = true,
             thinking = false,
@@ -135,6 +144,70 @@ object ChatReducer {
             banner = null,
         )
     }
+
+    /**
+     * The host accepted the prompt: one check. [id] correlates the reply with
+     * the row it belongs to; without it the newest unaccepted prompt is used,
+     * which is the one the reply can belong to. Nothing else is touched, so an
+     * older prompt never loses or regains a tick.
+     */
+    fun markPromptSent(state: ChatState, id: String? = null): ChatState {
+        val index = if (id != null) {
+            state.items.indexOfFirst { it is ChatItem.UserMessage && it.id == id }
+        } else {
+            state.items.indexOfLast { it is ChatItem.UserMessage && it.delivery == DeliveryState.Sending }
+        }
+        if (index < 0) return state
+        val item = state.items[index] as? ChatItem.UserMessage ?: return state
+        if (item.delivery != DeliveryState.Sending) return state
+        return state.copy(
+            items = state.items.toMutableList().also { it[index] = item.copy(delivery = DeliveryState.Sent) },
+        )
+    }
+
+    /**
+     * Processing evidence arrived (agent/turn start, assistant message start or
+     * update, tool execution start). Only the newest prompt row is upgraded, so
+     * a queued follow-up that has no row of its own cannot promote a stale
+     * message, and a row that already shows two checks is left alone.
+     *
+     * A prompt whose acceptance reply is still in flight is upgraded too: the
+     * evidence can only belong to it (the app sends one prompt per run and only
+     * while idle), and waiting for the reply would leave the row on one check
+     * when the run finishes before the reply arrives.
+     */
+    fun markProcessing(state: ChatState): ChatState {
+        val index = state.items.indexOfLast { it is ChatItem.UserMessage }
+        if (index < 0) return state
+        val item = state.items[index] as ChatItem.UserMessage
+        if (item.delivery == DeliveryState.Processing) return state
+        return state.copy(
+            items = state.items.toMutableList().also { it[index] = item.copy(delivery = DeliveryState.Processing) },
+        )
+    }
+
+    /**
+     * The `prompt` command succeeded. Pi reports in `data.disposition` what it
+     * did with the prompt:
+     *
+     *  - `"handled"`: an extension consumed it and no run started, so no
+     *    `agent_start`/`agent_settled` follows to end the run indicator. The
+     *    prompt is still accepted, so the row keeps its single check, but the
+     *    run state has to end here or the screen keeps "Pi is working…" (and
+     *    the slow-model hint) for a run that does not exist.
+     *  - `"queued"`, `"started"` or absent: a run is active or about to start,
+     *    so the streaming flag stays as it is.
+     */
+    fun applyPromptAccepted(state: ChatState, data: JsonElement?, id: String? = null): ChatState {
+        val accepted = markPromptSent(state, id)
+        return when (promptDisposition(data)) {
+            "handled" -> accepted.copy(streaming = false, thinking = false, activeAssistantId = null)
+            else -> accepted
+        }
+    }
+
+    private fun promptDisposition(data: JsonElement?): String? =
+        (data as? JsonObject)?.firstString("disposition")?.lowercase()
 
     fun setError(state: ChatState, message: String?): ChatState = state.copy(lastError = message)
 
@@ -226,9 +299,12 @@ object ChatReducer {
             .drop(lastAssistant + 1)
             .any { it is ChatItem.UserMessage && it.text == text }
         if (alreadyShown) {
+            // Keep the existing row and its tick: the echo is not new evidence.
             return state.copy(streaming = true, thinking = false)
         }
-        return userPrompt(state, text)
+        // No optimistic row for this one (a steer or a queued follow-up): the
+        // host is echoing a message it already has, so it starts at one check.
+        return userPrompt(state, text, DeliveryState.Sent)
     }
 
     private fun endBlock(state: ChatState, content: String?, thinking: Boolean): ChatState {
@@ -666,11 +742,9 @@ object ChatReducer {
                 val level = (data as? JsonObject)?.firstString("level")
                 state.copy(thinkingLevel = level ?: state.thinkingLevel)
             }
-            "prompt" -> {
-                // disposition "handled" means no run started for this prompt.
-                val disposition = (data as? JsonObject)?.firstString("disposition")
-                if (disposition == "handled") state.copy(streaming = false) else state
-            }
+            // The reply means Pi accepted the prompt; [applyPromptAccepted] ticks
+            // the row and ends the run state when an extension consumed it.
+            "prompt" -> applyPromptAccepted(state, data)
             else -> state
         }
     }

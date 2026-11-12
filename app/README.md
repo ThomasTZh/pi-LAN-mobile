@@ -10,7 +10,11 @@ compileSdk 37.
   default, sealed with an Android Keystore key, and only private network
   addresses are accepted. The host reuses the same PIN across restarts, so the
   saved profile reconnects without pairing again.
-- Chat with the agent: streaming text, a markdown subset, collapsible thinking,
+- Delivery ticks on your prompts: one check when Pi accepts the prompt, two
+  when the run starts on it (thinking, tool call or streaming); never downgraded.
+- Chat with the agent: streaming text, full Markdown (headings, nested and task
+  lists, tables with alignment, quotes, fenced code, strikethrough, rules,
+  links), collapsible thinking,
   tool cards with streamed output, a "Pi is working…" line with the queued
   count, queue/steer while a run is active, and Stop.
 - Answer blocking requests (`confirm`, `select`, `input`, `editor`) in bottom

@@ -26,7 +26,8 @@ JSONL RPC records.
 - `launcher/install.sh` installs a desktop entry that starts the host, prints the
   phone address and PIN, and opens the Pi CLI in the same terminal window. The
   host stops when the CLI exits (Ctrl+D, or Ctrl+C twice quickly), when the
-  window closes, or on Ctrl+C at the prompt.
+  window closes, or on Ctrl+C at the prompt. The terminal window closes with the
+  host; a startup failure waits for Enter so the error stays readable.
 
 ## Install
 

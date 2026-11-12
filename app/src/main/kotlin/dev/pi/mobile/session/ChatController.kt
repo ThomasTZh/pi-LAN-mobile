@@ -260,8 +260,16 @@ class ChatController(
             fail("Connect to Pi first.")
             return
         }
-        _state.update { ChatReducer.userPrompt(it, message) }
-        runCommand(Commands.PROMPT, buildJsonObject { put("message", message) })
+        // The reply is correlated with this row: only the prompt it accepts gets
+        // the single check, a later prompt cannot retro-tick an older message.
+        val promptId = appendPrompt(message)
+        runCommand(Commands.PROMPT, buildJsonObject { put("message", message) }) { data ->
+            // The socket consumes the reply, so it never reaches the record
+            // collector and its disposition has to be applied here: an
+            // extension-handled prompt starts no run, and leaving `streaming` on
+            // would keep the working indicator and the slow-model hint forever.
+            _state.update { current -> ChatReducer.applyPromptAccepted(current, data, promptId) }
+        }
     }
 
     fun steer(text: String) {
@@ -420,6 +428,21 @@ class ChatController(
     }
 
     // --------------------------------------------------------------- internals
+
+    /**
+     * Appends the optimistic prompt bubble and returns its row id so the prompt
+     * reply can be tied to the exact message it accepts. The id is read inside
+     * the state update itself, so a concurrent record cannot change it.
+     */
+    private fun appendPrompt(message: String): String? {
+        var promptId: String? = null
+        _state.update { current ->
+            val next = ChatReducer.userPrompt(current, message)
+            promptId = (next.items.lastOrNull() as? ChatItem.UserMessage)?.id
+            next
+        }
+        return promptId
+    }
 
     private fun runCommand(
         name: String,

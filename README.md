@@ -25,6 +25,11 @@ small host launcher around the existing extension.
   pairing again; `serve.sh --new-pin` rotates it.
 - Watch a run live: streaming text, collapsible thinking, tool cards whose
   output expands in place, and a "Pi is working…" line with the queued count.
+- Delivery ticks on your messages: one check once Pi accepts the prompt, two
+  when the run actually starts on it (thinking, a tool call or streaming).
+- Markdown rendering: headings, nested and task lists, tables with alignment,
+  quotes, fenced code with copy, strikethrough, rules and links; images are
+  shown by their alt text and never fetched.
 - Answer blocking requests in bottom sheets: yes/no confirmation, option lists,
   short text, and multi-line editor.
 - Queue a message while a run is active, send a follow-up, or stop the run.
@@ -56,6 +61,8 @@ small host launcher around the existing extension.
   to load.
 - The instrumented tests were run on one phone model; other Android versions and
   manufacturers are untested.
+- Delivery ticks are live-only. A transcript restored from the host shows no
+  ticks because the host history carries no delivery information.
 - The command palette lists what the host reports (extension commands, prompt
   templates, skills). Commands that only exist in the terminal interface are
   not available.
@@ -109,7 +116,7 @@ instrumented UI test with a synthetic command.
    reused on later starts, so the phone only needs pairing once.
    `serve.sh --new-pin` rotates it.
 
-3. Install `Pi-Mobile-1.3.0.apk` from the repository's releases on the phone,
+3. Install `Pi-Mobile-1.4.0.apk` from the repository's releases on the phone,
    open the app, enter the address and PIN, and tap Connect.
 
 4. Optional: install the desktop entry that starts the host and the terminal
@@ -120,7 +127,7 @@ instrumented UI test with a synthetic command.
    ```
 
    Exit the terminal assistant with Ctrl+D, or Ctrl+C twice quickly, to stop the
-   host as well.
+   host as well; the window closes with it (a startup failure waits for Enter).
 
 Build the app yourself with:
 
@@ -166,8 +173,8 @@ directory are left in place; delete them yourself if they are no longer wanted.
 
 | Check | Result |
 | --- | --- |
-| JVM unit tests | 116 tests, 0 failures (`:app:testDebugUnitTest`) |
-| Instrumented UI and screenshot tests | 102 tests, 0 failures on the ASUS phone (API 35) |
+| JVM unit tests | 135 tests, 0 failures (`:app:testDebugUnitTest`) |
+| Instrumented UI and screenshot tests | 124 tests, 0 failures on the ASUS phone (API 35) |
 | Android lint | 0 errors, 25 warnings (dependency and target-version notices) |
 | Host contract smoke test | 11 of 11 checks pass without a model call (`node server/tests/smoke.mjs`) |
 | End-to-end on the phone | Connect, streaming, tool card, abort, approval allow and deny, background approval notification, session reopen, new chat, and the 360 dp / 1.3x text / light / landscape / keyboard layouts |
