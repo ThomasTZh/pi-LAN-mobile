@@ -94,6 +94,13 @@ data class ChatState(
     val banner: String? = null,
     val lastError: String? = null,
     val interrupted: Boolean = false,
+    /** Extension status chips (`setStatus`), keyed by the extension's key. */
+    val statusEntries: Map<String, String> = emptyMap(),
+    /** Extension widgets (`setWidget`), for example plan mode's todo list. */
+    val widgets: Map<String, List<String>> = emptyMap(),
+    /** Text an extension asked to place in the composer (`set_editor_text`). */
+    val editorDraft: String? = null,
+    val editorDraftId: Long = 0L,
     val sequence: Long = 0L,
 ) {
     val activeDialog: PendingDialog? get() = dialogs.firstOrNull()

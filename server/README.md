@@ -18,6 +18,9 @@ JSONL RPC records.
 - `scripts/fetch-vendor.sh` downloads the pinned pi-rpc-web commit, verifies the
   tarball and all 24 kept files against `vendor/pi-rpc-web.sha256`, and installs
   it under `vendor/pi-rpc-web/`. The extension is not committed.
+- Children load the user's Pi extensions, skills, prompt templates and MCP
+  servers, so the app can run their slash commands and show plan-mode status
+  and todo widgets.
 - `launcher/install.sh` installs a desktop entry that starts the host, prints the
   phone address and PIN, and opens the Pi CLI in the same terminal window. The
   host stops when the CLI exits (Ctrl+D, or Ctrl+C twice quickly), when the

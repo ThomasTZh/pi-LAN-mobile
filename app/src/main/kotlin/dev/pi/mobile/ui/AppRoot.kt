@@ -50,6 +50,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.pi.mobile.data.AppSettings
 import dev.pi.mobile.session.ChatController
 import dev.pi.mobile.session.ChatState
+import dev.pi.mobile.session.PiCommand
 import dev.pi.mobile.session.ConnectionPhase
 import dev.pi.mobile.session.SessionsState
 import dev.pi.mobile.ui.chat.ChatActions
@@ -60,6 +61,7 @@ import dev.pi.mobile.ui.connect.ConnectScreen
 import dev.pi.mobile.ui.connect.displayAddress
 import dev.pi.mobile.ui.sheets.ApprovalSheetContent
 import dev.pi.mobile.ui.sheets.ModelSheetContent
+import dev.pi.mobile.ui.sheets.NewChatSheetContent
 import dev.pi.mobile.ui.sheets.SessionsSheetContent
 import dev.pi.mobile.ui.sheets.SettingsSheetContent
 import dev.pi.mobile.ui.sheets.StatsSheetContent
@@ -67,7 +69,7 @@ import dev.pi.mobile.ui.sheets.ThinkingSheetContent
 import dev.pi.mobile.ui.theme.PiTheme
 import dev.pi.mobile.ui.theme.findActivity
 
-private enum class Sheet { Sessions, Model, Thinking, Stats, Settings }
+private enum class Sheet { Sessions, NewChat, Model, Thinking, Stats, Settings }
 
 /**
  * Root of the Compose tree. Owns screen selection, sheet visibility, the
@@ -82,6 +84,7 @@ fun AppRoot(controller: ChatController) {
     val settings by controller.settingsState.collectAsStateWithLifecycle()
     val profiles by controller.profileState.collectAsStateWithLifecycle()
     val sessions by controller.sessionsState.collectAsStateWithLifecycle()
+    val commands by controller.commandsState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val haptics = LocalHapticFeedback.current
 
@@ -165,7 +168,8 @@ fun AppRoot(controller: ChatController) {
                                 approvalWaiting = approvalBanner,
                                 waitingCount = state.waitingDialogCount,
                                 onOpenApproval = openApproval,
-                                onNewChat = { controller.newChat() },
+                                commands = commands,
+                                onNewChat = { sheetName = Sheet.NewChat.name },
                                 onRefreshSessions = { controller.refreshSessions() },
                                 onOpenSession = { row -> controller.openSession(row) },
                                 onRenameSession = { row, name -> controller.renameSession(row, name) },
@@ -179,6 +183,7 @@ fun AppRoot(controller: ChatController) {
                                 approvalWaiting = approvalBanner,
                                 waitingCount = state.waitingDialogCount,
                                 onOpenApproval = openApproval,
+                                commands = commands,
                             )
                         }
                     }
@@ -195,6 +200,7 @@ fun AppRoot(controller: ChatController) {
                 onRequestNotifications = requestNotifications,
                 controller = controller,
                 onCloseSheet = { sheetName = "" },
+                onOpenNewChat = { sheetName = Sheet.NewChat.name },
             )
 
             val dialog = state.activeDialog
@@ -265,6 +271,7 @@ internal fun WideChatLayout(
     approvalWaiting: Boolean,
     waitingCount: Int,
     onOpenApproval: () -> Unit,
+    commands: List<PiCommand>,
     onNewChat: () -> Unit,
     onRefreshSessions: () -> Unit,
     onOpenSession: (dev.pi.mobile.session.SessionRow) -> Unit,
@@ -312,6 +319,7 @@ internal fun WideChatLayout(
             approvalWaiting = approvalWaiting,
             waitingCount = waitingCount,
             onOpenApproval = onOpenApproval,
+            commands = commands,
         )
     }
 }
@@ -328,6 +336,7 @@ private fun PiSheetHost(
     onRequestNotifications: () -> Unit,
     controller: ChatController,
     onCloseSheet: () -> Unit,
+    onOpenNewChat: () -> Unit,
 ) {
     if (sheet.isBlank()) return
     ModalBottomSheet(
@@ -340,10 +349,7 @@ private fun PiSheetHost(
                 state = sessions,
                 currentPath = state.sessionPath,
                 streaming = state.streaming,
-                onNewChat = {
-                    onCloseSheet()
-                    controller.newChat()
-                },
+                onNewChat = onOpenNewChat,
                 onRefresh = { controller.refreshSessions() },
                 onOpen = { row ->
                     onCloseSheet()
@@ -352,6 +358,17 @@ private fun PiSheetHost(
                 onRename = { row, name -> controller.renameSession(row, name) },
                 onDelete = { row -> controller.deleteSession(row) },
                 onClose = onCloseSheet,
+            )
+
+            Sheet.NewChat.name -> NewChatSheetContent(
+                currentFolder = state.cwd,
+                knownFolders = sessions.rows.mapNotNull { it.cwd }.distinct().sorted(),
+                onClose = onCloseSheet,
+                onCheck = { folder -> controller.checkFolder(folder) },
+                onStart = { folder ->
+                    onCloseSheet()
+                    controller.newChat(folder)
+                },
             )
 
             Sheet.Model.name -> ModelSheetContent(

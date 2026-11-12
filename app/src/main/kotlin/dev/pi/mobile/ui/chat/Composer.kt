@@ -3,6 +3,7 @@ package dev.pi.mobile.ui.chat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -29,6 +30,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
@@ -40,6 +42,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import dev.pi.mobile.R
+import dev.pi.mobile.session.CommandCatalog
+import dev.pi.mobile.session.PiCommand
 import dev.pi.mobile.ui.components.StopGlyph
 import dev.pi.mobile.ui.theme.PiDims
 
@@ -57,19 +61,35 @@ fun Composer(
     onSend: () -> Unit,
     onQueue: () -> Unit,
     onStop: () -> Unit,
+    commands: List<PiCommand>,
     modifier: Modifier = Modifier,
 ) {
     val stopLabel = stringResource(R.string.chat_stop)
+    val query = value.trim()
+    val palette = remember(query, commands) {
+        if (query.startsWith("/") && query.none { it == ' ' || it == '\n' }) {
+            CommandCatalog.suggestions(commands, query.removePrefix("/"))
+        } else {
+            emptyList()
+        }
+    }
     Surface(
         modifier = modifier
             .fillMaxWidth()
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom)),
         color = MaterialTheme.colorScheme.background,
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
+        Column(modifier = Modifier.fillMaxWidth()) {
+            if (palette.isNotEmpty()) {
+                CommandPalette(
+                    commands = palette,
+                    onPick = { command -> onValueChange(command.slash + " ") },
+                )
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
             verticalAlignment = Alignment.Bottom,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -165,6 +185,7 @@ fun Composer(
                         modifier = Modifier.size(20.dp),
                     )
                 }
+            }
             }
         }
     }

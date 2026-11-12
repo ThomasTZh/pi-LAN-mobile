@@ -64,6 +64,7 @@ import androidx.compose.ui.unit.dp
 import dev.pi.mobile.R
 import dev.pi.mobile.session.ChatItem
 import dev.pi.mobile.session.ChatState
+import dev.pi.mobile.session.PiCommand
 import dev.pi.mobile.session.ConnectionPhase
 import dev.pi.mobile.ui.components.LocalPiHaptics
 import dev.pi.mobile.ui.components.PiGlyph
@@ -103,12 +104,18 @@ fun ChatScreen(
     approvalWaiting: Boolean = false,
     waitingCount: Int = 0,
     onOpenApproval: () -> Unit = {},
+    commands: List<PiCommand> = emptyList(),
 ) {
     val haptics = LocalPiHaptics.current
     var draft by rememberSaveable { mutableStateOf("") }
     var confirmForget by remember { mutableStateOf(false) }
     val tailLength = state.items.lastOrNull()?.let(::itemLength) ?: 0
     var slowModelHint by remember { mutableStateOf(false) }
+
+    // An extension can place text in the composer (`set_editor_text`).
+    LaunchedEffect(state.editorDraftId) {
+        if (state.editorDraftId > 0) state.editorDraft?.let { draft = it }
+    }
 
     // PLAN.md 6: after 20 s without new tokens while streaming, say the desktop
     // may still be loading the model. Any token resets the timer.
@@ -126,6 +133,8 @@ fun ChatScreen(
             .background(MaterialTheme.colorScheme.background),
     ) {
         ChatTopBar(state = state, actions = actions, onForget = { confirmForget = true })
+
+        ExtensionStatusRow(state.statusEntries)
 
         ChatBanners(
             state = state,
@@ -147,8 +156,10 @@ fun ChatScreen(
             }
         }
 
+        ExtensionWidgetPanel(state.widgets)
         ComposerDivider()
         Composer(
+            commands = commands,
             value = draft,
             onValueChange = { draft = it },
             streaming = state.streaming,

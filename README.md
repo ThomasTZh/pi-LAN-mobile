@@ -26,8 +26,14 @@ small host launcher around the existing extension.
 - Answer blocking requests in bottom sheets: yes/no confirmation, option lists,
   short text, and multi-line editor.
 - Queue a message while a run is active, send a follow-up, or stop the run.
-- Browse the host's sessions grouped by project, reopen one, start a new chat,
-  rename or delete, and confirm before switching mid-run.
+- Start a new chat in any workspace folder: pick a folder from the host's
+  recent projects or type an absolute path, and the host verifies it first.
+- Browse the host's sessions grouped by project, reopen one, rename or delete,
+  and confirm before switching mid-run.
+- Run extension commands, prompt templates and skills from the composer: type
+  `/` and pick from the list the host reports.
+- See plan mode and other extensions: status entries and todo widgets appear
+  above the composer, and extensions can place text in the composer.
 - Switch model and thinking level, and read session token and cost statistics.
 - Receive approvals and completion alerts while the app is in the background.
 - Use one column at 360 dp, or a two-pane layout on wider screens.
@@ -47,6 +53,9 @@ small host launcher around the existing extension.
   to load.
 - The instrumented tests were run on one phone model; other Android versions and
   manufacturers are untested.
+- The command palette lists what the host reports (extension commands, prompt
+  templates, skills). Commands that only exist in the terminal interface are
+  not available.
 
 ## Screenshots
 
@@ -93,7 +102,7 @@ instrumented UI test with a synthetic command.
      PIN:        123 456
    ```
 
-3. Install `Pi-Mobile-1.0.0.apk` from the repository's releases on the phone,
+3. Install `Pi-Mobile-1.2.0.apk` from the repository's releases on the phone,
    open the app, enter the address and PIN, and tap Connect.
 
 4. Optional: install the desktop entry that starts the host and the terminal
@@ -124,6 +133,17 @@ adb uninstall dev.pi.mobile                   # remove the app and its sealed PI
 Session files under `~/.pi/agent/sessions` and the host's `server/runtime/`
 directory are left in place; delete them yourself if they are no longer wanted.
 
+## Troubleshooting
+
+- **The phone cannot reach the host, but its browser can open the address.**
+  On Android 16 and newer, access to the local network is gated by the system.
+  Open Settings > Apps > Pi Mobile > Permissions > Nearby devices, allow it,
+  then tap Connect again. A failed connection on those versions shows the same
+  hint inside the app.
+- **The sessions list is empty on a test host.** Test mode keeps its own
+  session store under `server/runtime/pi-home`; sessions created before a host
+  restart are not migrated.
+
 ## Layout
 
 | Component | Path | Contents | Class |
@@ -139,8 +159,8 @@ directory are left in place; delete them yourself if they are no longer wanted.
 
 | Check | Result |
 | --- | --- |
-| JVM unit tests | 99 tests, 0 failures (`:app:testDebugUnitTest`) |
-| Instrumented UI and screenshot tests | 93 tests, 0 failures on the ASUS phone (API 35) |
+| JVM unit tests | 110 tests, 0 failures (`:app:testDebugUnitTest`) |
+| Instrumented UI and screenshot tests | 100 tests, 0 failures on the ASUS phone (API 35) |
 | Android lint | 0 errors, 25 warnings (dependency and target-version notices) |
 | Host contract smoke test | 11 of 11 checks pass without a model call (`node server/tests/smoke.mjs`) |
 | End-to-end on the phone | Connect, streaming, tool card, abort, approval allow and deny, background approval notification, session reopen, new chat, and the 360 dp / 1.3x text / light / landscape / keyboard layouts |

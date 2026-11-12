@@ -50,6 +50,11 @@ sealed interface PiRecord {
         val prefill: String?,
         val timeoutMs: Long?,
         val notifyType: String? = null,
+        val statusKey: String? = null,
+        val statusText: String? = null,
+        val widgetKey: String? = null,
+        val widgetLines: List<String> = emptyList(),
+        val editorText: String? = null,
     ) : PiRecord
     data class Child(val kind: String, val detail: String?) : PiRecord
     data class Unknown(val type: String) : PiRecord
@@ -218,6 +223,11 @@ object Records {
             prefill = obj.firstString("prefill", "value"),
             timeoutMs = obj.longOr("timeoutMs") ?: obj.longOr("timeout"),
             notifyType = obj.firstString("notifyType"),
+            statusKey = obj.firstString("statusKey"),
+            statusText = obj.firstString("statusText"),
+            widgetKey = obj.firstString("widgetKey"),
+            widgetLines = stringList(obj.arr("widgetLines")),
+            editorText = obj.firstString("text"),
         )
     }
 

@@ -45,6 +45,10 @@ class ChatController(
     val state: StateFlow<ChatState> = _state.asStateFlow()
 
     val sessionsState: StateFlow<SessionsState> get() = sessions.state
+
+    private val _commands = MutableStateFlow<List<PiCommand>>(emptyList())
+    /** Slash commands, skills and prompt templates reported by the host. */
+    val commandsState: StateFlow<List<PiCommand>> = _commands.asStateFlow()
     val profileState: StateFlow<ProfilesFile> get() = profiles.state
     val settingsState: StateFlow<AppSettings> get() = settings.state
     val connectionState: StateFlow<PiConnection.State> get() = connection.state
@@ -129,14 +133,18 @@ class ChatController(
         connectInternal(address, pin, session = row, remember = false)
     }
 
-    /** Fresh chat: hello with the last known cwd and no session file. */
-    fun newChat() {
+    /**
+     * Fresh chat in [folder], or in the last known cwd when the caller does not
+     * pick one. The folder is sent as the hello cwd, so Pi runs there.
+     */
+    fun newChat(folder: String? = null) {
         val address = targetAddress ?: profiles.state.value.selected()?.baseUrl
         val pin = targetPin ?: targetProfileId?.let { secrets.getPin(it) }
         if (address == null || pin == null) {
             fail("Connect to the Pi host before starting a chat.")
             return
         }
+        val chosenCwd = folder?.let { NewChatFolder.normalize(it) } ?: _state.value.cwd
         _state.update {
             it.copy(
                 sessionPath = null,
@@ -152,10 +160,36 @@ class ChatController(
                 interrupted = false,
             )
         }
-        connectInternal(address, pin, session = null, remember = false)
+        connectInternal(address, pin, session = null, remember = false, cwdOverride = chosenCwd)
     }
 
-    private fun connectInternal(address: String, pin: String, session: SessionRow?, remember: Boolean) {
+    /** Reloads the slash-command catalogue (`get_commands`). */
+    fun refreshCommands() {
+        viewModelScope.launch {
+            val reply = runCatching { connection.command("get_commands") }.getOrNull() ?: return@launch
+            if (reply.ok) _commands.value = CommandCatalog.parse(reply.data)
+        }
+    }
+
+    /** Asks the host whether [folder] is an existing directory. Null means yes. */
+    suspend fun checkFolder(folder: String): String? {
+        NewChatFolder.validate(folder)?.let { return it }
+        val reply = runCatching {
+            connection.meta(
+                Commands.projectCheck(),
+                buildJsonObject { put("cwd", NewChatFolder.normalize(folder)) },
+            )
+        }.getOrNull() ?: return "Could not check the folder."
+        return if (reply.ok) null else reply.error ?: "That folder does not exist on the host."
+    }
+
+    private fun connectInternal(
+        address: String,
+        pin: String,
+        session: SessionRow?,
+        remember: Boolean,
+        cwdOverride: String? = null,
+    ) {
         viewModelScope.launch {
             _state.update {
                 it.copy(
@@ -165,9 +199,12 @@ class ChatController(
                     banner = null,
                     interrupted = false,
                     dialogs = emptyList(),
+                    statusEntries = emptyMap(),
+                    widgets = emptyMap(),
+                    editorDraft = null,
                 )
             }
-            val cwd = session?.cwd ?: _state.value.cwd
+            val cwd = session?.cwd ?: cwdOverride ?: _state.value.cwd
             val result = connection.connect(address, pin, cwd = cwd, session = session?.path)
             when (result) {
                 is PiConnection.ConnectResult.Ok -> {
@@ -193,6 +230,7 @@ class ChatController(
                         )
                     }
                     if (settings.state.value.alertsEnabled) PiAlertsService.start(graph.appContext)
+                    refreshCommands()
                 }
 
                 is PiConnection.ConnectResult.Failed -> {
@@ -303,6 +341,7 @@ class ChatController(
     }
 
     fun disconnect() {
+        _commands.value = emptyList()
         connection.close()
         sessions.clear()
         _state.update {

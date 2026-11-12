@@ -1,5 +1,6 @@
 package dev.pi.mobile.ui.connect
 
+import android.os.Build
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -236,6 +237,14 @@ fun ConnectScreen(
                     if (shown != null) {
                         Spacer(Modifier.height(8.dp))
                         PiErrorLine(shown, Modifier.testTag("connect_error"))
+                        if (Build.VERSION.SDK_INT >= 36) {
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                text = stringResource(R.string.connect_nearby_hint),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
 
                     Spacer(Modifier.height(18.dp))

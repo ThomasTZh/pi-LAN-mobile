@@ -63,6 +63,7 @@ class AdaptiveLayoutTest {
                                 approvalWaiting = false,
                                 waitingCount = 0,
                                 onOpenApproval = {},
+            commands = emptyList(),
                                 onNewChat = {},
                                 onRefreshSessions = {},
                                 onOpenSession = {},

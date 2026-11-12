@@ -531,6 +531,22 @@ object ChatReducer {
             val text = listOfNotNull(record.title, record.message).joinToString(" · ").ifBlank { "Pi notice" }
             return addNotice(state, text, NoticeKind.Info)
         }
+        if (method == "setstatus") {
+            val key = record.statusKey ?: return state
+            val text = record.statusText
+            val next = if (text.isNullOrBlank()) state.statusEntries - key else state.statusEntries + (key to text)
+            return state.copy(statusEntries = next)
+        }
+        if (method == "setwidget") {
+            val key = record.widgetKey ?: return state
+            val next = if (record.widgetLines.isEmpty()) state.widgets - key else state.widgets + (key to record.widgetLines)
+            return state.copy(widgets = next)
+        }
+        if (method == "set_editor_text") {
+            val text = record.editorText ?: return state
+            return state.copy(editorDraft = text, editorDraftId = state.editorDraftId + 1)
+        }
+        if (method == "settitle") return state
         val kind = when (method) {
             "confirm" -> DialogKind.Confirm
             "select" -> DialogKind.Select

@@ -32,6 +32,10 @@ compileSdk 37.
 
 Requires JDK 17 and the Android SDK with platform 37 and build-tools 36.0.0.
 
+On Android 16 and newer, allow **Nearby devices** under
+Settings > Apps > Pi Mobile > Permissions for local network access; without it
+the host is unreachable even though the phone's browser can open its address.
+
 ## Release build
 
 `assembleRelease` is signed only when `release-signing.properties` exists in the
